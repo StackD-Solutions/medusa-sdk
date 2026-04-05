@@ -1,0 +1,64 @@
+{
+	"name": "@stackd-solutions/medusa-sdk",
+	"version": "0.1.0",
+	"description": "Extended Medusa SDK client",
+	"author": "StackD Solutions (https://stackd-solutions.io)",
+	"license": "Apache-2.0",
+	"main": "dist/index.js",
+	"module": "dist/index.mjs",
+	"types": "dist/index.d.ts",
+	"files": [
+		"dist"
+	],
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"import": "./dist/index.mjs",
+			"require": "./dist/index.js",
+			"default": "./dist/index.js"
+		},
+		"./package.json": "./package.json"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+ssh://git@github.com/StackD-Solutions/medusa-sdk.git"
+	},
+	"keywords": [
+		"medusa",
+		"medusa-sdk",
+		"ecommerce",
+		"email-verification",
+		"wishlist"
+	],
+	"scripts": {
+		"build": "tsup",
+		"dev": "tsup --watch",
+		"lint": "eslint src --ext .ts",
+		"fix:prettier": "prettier --write .",
+		"test": "jest",
+		"test:coverage": "jest --coverage"
+	},
+	"peerDependencies": {
+		"@medusajs/js-sdk": "^2.13.5"
+	},
+	"devDependencies": {
+		"@medusajs/js-sdk": "2.13.5",
+		"@stackd-solutions/medusa-email-verification": "^0.1.3",
+		"@stackd-solutions/medusa-wishlist": "^0.1.1",
+		"@swc/core": "^1.15.24",
+		"@swc/jest": "^0.2.39",
+		"@types/jest": "^30.0.0",
+		"eslint": "^10.1.0",
+		"jest": "^30.3.0",
+		"prettier": "^3",
+		"ts-node": "^10.9.2",
+		"tsup": "^8.0.0",
+		"typescript": "^5.6.2"
+	},
+	"engines": {
+		"node": ">=20"
+	},
+	"publishConfig": {
+		"access": "public"
+	}
+}

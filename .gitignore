@@ -1,0 +1,13 @@
+node_modules
+.medusa
+.cache
+.pnp.cjs
+.pnp.loader.mjs
+.yarn
+.idea
+.DS_Store
+/dist
+/build
+.claude
+coverage
+.env
