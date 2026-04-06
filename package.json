@@ -1,6 +1,6 @@
 {
 	"name": "@stackd-solutions/medusa-sdk",
-	"version": "0.1.0",
+	"version": "0.1.1",
 	"description": "Extended Medusa SDK client",
 	"author": "StackD Solutions (https://stackd-solutions.io)",
 	"license": "Apache-2.0",
