@@ -24,14 +24,14 @@ yarn add @stackd-solutions/medusa-sdk @medusajs/js-sdk
 ## Usage
 
 ```typescript
-import {StackdMedusaSdk, emailVerificationPlugin, wishlistPlugin} from '@stackd-solutions/medusa-sdk'
+import {StackdMedusaSdk, emailVerificationPlugin, passwordManagerPlugin, wishlistPlugin} from '@stackd-solutions/medusa-sdk'
 
 const sdk = new StackdMedusaSdk(
 	{
 		baseUrl: 'http://localhost:9000',
 		auth: {type: 'session', jwtTokenStorageKey: 'medusa_auth_token'}
 	},
-	[emailVerificationPlugin, wishlistPlugin] as const,
+	[emailVerificationPlugin, passwordManagerPlugin, wishlistPlugin] as const,
 	{
 		getAuthHeader: async () => ({
 			Authorization: `Bearer ${localStorage.getItem('medusa_auth_token')}`
@@ -48,6 +48,7 @@ const status = await sdk.stackd.emailVerification.getVerificationStatus()
 | Plugin             | Namespace                      | Description                                         |
 | ------------------ | ------------------------------ | --------------------------------------------------- |
 | Email Verification | `sdk.stackd.emailVerification` | Send, verify, and check customer email verification |
+| Password Manager   | `sdk.stackd.passwordManager`   | Change customer passwords                           |
 | Wishlist           | `sdk.stackd.wishlist`          | Create, manage, and share product wishlists         |
 
 ### Email Verification
@@ -81,6 +82,29 @@ const result = await sdk.stackd.emailVerification.verifyToken({
 
 // Check verification status
 const {verified} = await sdk.stackd.emailVerification.getVerificationStatus()
+```
+
+### Password Manager
+
+Companion SDK for the [`@stackd-solutions/medusa-password-manager`](https://www.npmjs.com/package/@stackd-solutions/medusa-password-manager) plugin. Provides a typed method for the password change store API.
+
+```typescript
+import {passwordManagerPlugin} from '@stackd-solutions/medusa-sdk'
+```
+
+**Endpoints:**
+
+| Method           | HTTP                                        | Description                                    |
+| ---------------- | ------------------------------------------- | ---------------------------------------------- |
+| `changePassword` | `POST /store/customers/me/password/change`  | Change the authenticated customer's password   |
+
+**Example:**
+
+```typescript
+await sdk.stackd.passwordManager.changePassword({
+	current_password: 'old-password',
+	new_password: 'new-password'
+})
 ```
 
 ### Wishlist

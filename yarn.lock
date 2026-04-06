@@ -1348,12 +1348,26 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@stackd-solutions/medusa-password-manager@npm:^0.1.0":
+  version: 0.1.0
+  resolution: "@stackd-solutions/medusa-password-manager@npm:0.1.0"
+  dependencies:
+    express-rate-limit: "npm:^8.3.2"
+    zod: "npm:^3.24.4"
+  peerDependencies:
+    "@medusajs/framework": ^2.13.5
+    "@medusajs/medusa": ^2.13.5
+  checksum: 10c0/7d0bb9c77a123432993ba940e015991ba9e95ca5a63c21243e44641d9cd8063c60b1ca0713da1c19155e1072f7362a8d8bfd32d484ae72935c3b98a4dda06aff
+  languageName: node
+  linkType: hard
+
 "@stackd-solutions/medusa-sdk@workspace:.":
   version: 0.0.0-use.local
   resolution: "@stackd-solutions/medusa-sdk@workspace:."
   dependencies:
     "@medusajs/js-sdk": "npm:2.13.5"
     "@stackd-solutions/medusa-email-verification": "npm:^0.1.3"
+    "@stackd-solutions/medusa-password-manager": "npm:^0.1.0"
     "@stackd-solutions/medusa-wishlist": "npm:^0.1.1"
     "@swc/core": "npm:^1.15.24"
     "@swc/jest": "npm:^0.2.39"
@@ -1365,7 +1379,7 @@ __metadata:
     tsup: "npm:^8.0.0"
     typescript: "npm:^5.6.2"
   peerDependencies:
-    "@medusajs/js-sdk": ^2.8.0
+    "@medusajs/js-sdk": ^2.13.5
   languageName: unknown
   linkType: soft
 
@@ -2816,6 +2830,17 @@ __metadata:
   languageName: node
   linkType: hard
 
+"express-rate-limit@npm:^8.3.2":
+  version: 8.3.2
+  resolution: "express-rate-limit@npm:8.3.2"
+  dependencies:
+    ip-address: "npm:10.1.0"
+  peerDependencies:
+    express: ">= 4.11"
+  checksum: 10c0/5b64d0691071086cdb8cfc6bcd5e761f5687cf4fabdebfe2a043ea5b4d31443637181e7be71e7ffabce76aee816daee62c1ca83250045847957da408a129f650
+  languageName: node
+  linkType: hard
+
 "fast-deep-equal@npm:^3.1.1, fast-deep-equal@npm:^3.1.3":
   version: 3.1.3
   resolution: "fast-deep-equal@npm:3.1.3"
@@ -3220,7 +3245,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"ip-address@npm:^10.0.1":
+"ip-address@npm:10.1.0, ip-address@npm:^10.0.1":
   version: 10.1.0
   resolution: "ip-address@npm:10.1.0"
   checksum: 10c0/0103516cfa93f6433b3bd7333fa876eb21263912329bfa47010af5e16934eeeff86f3d2ae700a3744a137839ddfad62b900c7a445607884a49b5d1e32a3d7566
