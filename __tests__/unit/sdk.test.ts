@@ -8,10 +8,16 @@ jest.mock('@medusajs/js-sdk', () => ({
 	}
 }))
 
-import {StackdMedusaSdk, type Plugin, type StackdClientOptions} from '../../src'
+import {StackdMedusaSdk, LocalWishlist, type Plugin, type StackdClientOptions} from '../../src'
 
 beforeEach(() => {
 	mockFetch.mockReset()
+})
+
+describe('exports', () => {
+	it('should export LocalWishlist', () => {
+		expect(LocalWishlist).toBeDefined()
+	})
 })
 
 describe('StackdMedusaSdk', () => {

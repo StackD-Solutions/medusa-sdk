@@ -1,9 +1,7 @@
 import Medusa, {ClientHeaders} from '@medusajs/js-sdk'
-import type {ChangePasswordRequest, ChangePasswordResponse} from '@stackd-solutions/medusa-password-manager'
 import {StackdClientOptions, Plugin} from '../..'
 import {createFetch} from '../../utils/http'
-
-export type {ChangePasswordRequest, ChangePasswordResponse}
+import {ChangePasswordRequest, ChangePasswordResponse} from '../../types'
 
 type PasswordManagerEndpoints = {
 	changePassword: (input: ChangePasswordRequest, headers?: ClientHeaders) => Promise<ChangePasswordResponse>

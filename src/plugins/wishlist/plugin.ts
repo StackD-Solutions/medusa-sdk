@@ -1,78 +1,67 @@
 import Medusa, {ClientHeaders} from '@medusajs/js-sdk'
-import type {
-	Wishlist,
-	WishlistItem,
-	PaginatedWishlistResponse,
-	PaginatedWishlistItemResponse,
-	CreateWishlistRequest,
-	UpdateWishlistRequest,
-	AddItemToWishlistRequest,
-	ImportWishlistRequest,
-	ShareTokenResponse,
-	DeleteResponse,
-	TotalItemsCountResponse,
-	ListWishlistsQuery,
-	RetrieveWishlistQuery,
-	TotalItemsCountQuery
-} from '@stackd-solutions/medusa-wishlist'
 import {StackdClientOptions, Plugin} from '../..'
 import {createFetch, toQueryString} from '../../utils/http'
-
-export type {
-	Wishlist,
-	WishlistItem,
-	PaginatedWishlistResponse,
-	PaginatedWishlistItemResponse,
+import LocalWishlist from './local-wishlist'
+import {
+	AddWishlistItemRequest,
 	CreateWishlistRequest,
-	UpdateWishlistRequest,
-	AddItemToWishlistRequest,
-	ImportWishlistRequest,
-	ShareTokenResponse,
 	DeleteResponse,
-	TotalItemsCountResponse,
-	ListWishlistsQuery,
-	RetrieveWishlistQuery,
-	TotalItemsCountQuery
-}
-
-export type ListItemsQuery = {
-	limit?: number
-	offset?: number
-}
+	ListQuery,
+	UpdateWishlistRequest,
+	WishlistItemResponse,
+	WishlistItemsResponse,
+	WishlistListResponse,
+	WishlistResponse
+} from '../../types'
 
 type WishlistEndpoints = {
-	list: (query?: ListWishlistsQuery, headers?: ClientHeaders) => Promise<PaginatedWishlistResponse>
-	create: (input: CreateWishlistRequest, headers?: ClientHeaders) => Promise<Wishlist>
-	retrieve: (id: string, query?: RetrieveWishlistQuery, headers?: ClientHeaders) => Promise<Wishlist>
-	update: (id: string, input: UpdateWishlistRequest, headers?: ClientHeaders) => Promise<Wishlist>
+	list: (query?: ListQuery, headers?: ClientHeaders) => Promise<WishlistListResponse>
+	create: (input: CreateWishlistRequest, headers?: ClientHeaders) => Promise<WishlistResponse>
+	retrieve: (id: string, headers?: ClientHeaders) => Promise<WishlistResponse>
+	update: (id: string, input: UpdateWishlistRequest, headers?: ClientHeaders) => Promise<WishlistResponse>
 	delete: (id: string, headers?: ClientHeaders) => Promise<DeleteResponse>
-	listItems: (id: string, query?: ListItemsQuery, headers?: ClientHeaders) => Promise<PaginatedWishlistItemResponse>
-	addItem: (id: string, input: AddItemToWishlistRequest, headers?: ClientHeaders) => Promise<WishlistItem>
-	removeItem: (id: string, itemId: string, headers?: ClientHeaders) => Promise<DeleteResponse>
-	generateShareToken: (id: string, headers?: ClientHeaders) => Promise<ShareTokenResponse>
-	transfer: (id: string, headers?: ClientHeaders) => Promise<Wishlist>
-	import: (input: ImportWishlistRequest, headers?: ClientHeaders) => Promise<Wishlist>
-	getTotalItemsCount: (query?: TotalItemsCountQuery, headers?: ClientHeaders) => Promise<TotalItemsCountResponse>
+	listItems: (id: string, query?: ListQuery, headers?: ClientHeaders) => Promise<WishlistItemsResponse>
+	addItem: (id: string, input: AddWishlistItemRequest, headers?: ClientHeaders) => Promise<WishlistItemResponse>
+	removeItem: (id: string, productVariantId: string, headers?: ClientHeaders) => Promise<DeleteResponse>
 }
 
 export const wishlistPlugin: Plugin<'wishlist', WishlistEndpoints> = {
 	name: 'wishlist' as const,
 	endpoints: (sdk: Medusa, options?: StackdClientOptions) => {
 		const fetch = createFetch(sdk, options)
+		const localId = options?.localWishlistId ?? 'wishlist'
+		const local = new LocalWishlist(localId)
+		const isLocal = (id: string): boolean => id === localId
 
 		return {
 			list: async (query, headers) => fetch(`/store/wishlists${toQueryString(query)}`, {method: 'GET', headers}),
 			create: async (input, headers) => fetch('/store/wishlists', {method: 'POST', body: input, headers}),
-			retrieve: async (id, query, headers) => fetch(`/store/wishlists/${id}${toQueryString(query)}`, {method: 'GET', headers}),
+			retrieve: async (id, headers) => {
+				if (isLocal(id)) {
+					return local.retrieve()
+				}
+				return fetch(`/store/wishlists/${id}`, {method: 'GET', headers})
+			},
 			update: async (id, input, headers) => fetch(`/store/wishlists/${id}`, {method: 'PUT', body: input, headers}),
 			delete: async (id, headers) => fetch(`/store/wishlists/${id}`, {method: 'DELETE', headers}),
-			listItems: async (id, query, headers) => fetch(`/store/wishlists/${id}/items${toQueryString(query)}`, {method: 'GET', headers}),
-			addItem: async (id, input, headers) => fetch(`/store/wishlists/${id}/items`, {method: 'POST', body: input, headers}),
-			removeItem: async (id, itemId, headers) => fetch(`/store/wishlists/${id}/items/${itemId}`, {method: 'DELETE', headers}),
-			generateShareToken: async (id, headers) => fetch(`/store/wishlists/${id}/share`, {method: 'POST', headers}),
-			transfer: async (id, headers) => fetch(`/store/wishlists/${id}/transfer`, {method: 'POST', headers}),
-			import: async (input, headers) => fetch('/store/wishlists/import', {method: 'POST', body: input, headers}),
-			getTotalItemsCount: async (query, headers) => fetch(`/store/wishlists/total-items-count${toQueryString(query)}`, {method: 'GET', headers})
+			listItems: async (id, query, headers) => {
+				if (isLocal(id)) {
+					return local.listItems(query)
+				}
+				return fetch(`/store/wishlists/${id}/items${toQueryString(query)}`, {method: 'GET', headers})
+			},
+			addItem: async (id, input, headers) => {
+				if (isLocal(id)) {
+					return local.addItem(input.product_variant_id)
+				}
+				return fetch(`/store/wishlists/${id}/items`, {method: 'POST', body: input, headers})
+			},
+			removeItem: async (id, productVariantId, headers) => {
+				if (isLocal(id)) {
+					return local.removeItem(productVariantId)
+				}
+				return fetch(`/store/wishlists/${id}/items/${productVariantId}`, {method: 'DELETE', headers})
+			}
 		}
 	}
 }

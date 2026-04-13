@@ -4,6 +4,7 @@ jest.mock('@medusajs/js-sdk', () => ({
 	__esModule: true,
 	default: class MockMedusa {
 		client = {fetch: mockFetch}
+		authenticated = true
 		constructor(public config: Record<string, unknown>) {}
 	}
 }))
@@ -37,22 +38,10 @@ describe('wishlistPlugin', () => {
 		it('should append query params', async () => {
 			const sdk = new StackdMedusaSdk(medusaConfig, [wishlistPlugin] as const)
 			await sdk.stackd.wishlist.list({limit: 5, offset: 10})
-			expect(mockFetch).toHaveBeenCalledWith(expect.stringContaining('/store/wishlists?'), {
-				method: 'GET',
-				headers: {}
-			})
 			const url = mockFetch.mock.calls[0][0] as string
 			const params = new URLSearchParams(url.split('?')[1])
 			expect(params.get('limit')).toBe('5')
 			expect(params.get('offset')).toBe('10')
-		})
-
-		it('should handle array query params', async () => {
-			const sdk = new StackdMedusaSdk(medusaConfig, [wishlistPlugin] as const)
-			await sdk.stackd.wishlist.list({items_fields: ['id', 'name']})
-			const url = mockFetch.mock.calls[0][0] as string
-			const params = new URLSearchParams(url.split('?')[1])
-			expect(params.getAll('items_fields')).toEqual(['id', 'name'])
 		})
 
 		it('should skip undefined query params', async () => {
@@ -71,6 +60,14 @@ describe('wishlistPlugin', () => {
 				method: 'GET',
 				headers: {}
 			})
+		})
+
+		it('should filter by product_variant_id', async () => {
+			const sdk = new StackdMedusaSdk(medusaConfig, [wishlistPlugin] as const)
+			await sdk.stackd.wishlist.list({product_variant_id: 'v_1'})
+			const url = mockFetch.mock.calls[0][0] as string
+			const params = new URLSearchParams(url.split('?')[1])
+			expect(params.get('product_variant_id')).toBe('v_1')
 		})
 	})
 
@@ -94,15 +91,6 @@ describe('wishlistPlugin', () => {
 				method: 'GET',
 				headers: {}
 			})
-		})
-
-		it('should append query params', async () => {
-			const sdk = new StackdMedusaSdk(medusaConfig, [wishlistPlugin] as const)
-			await sdk.stackd.wishlist.retrieve('wl_123', {include_calculated_price: true})
-			const url = mockFetch.mock.calls[0][0] as string
-			expect(url).toContain('/store/wishlists/wl_123?')
-			const params = new URLSearchParams(url.split('?')[1])
-			expect(params.get('include_calculated_price')).toBe('true')
 		})
 	})
 
@@ -130,7 +118,7 @@ describe('wishlistPlugin', () => {
 	})
 
 	describe('listItems', () => {
-		it('should call without query params', async () => {
+		it('should call with id', async () => {
 			const sdk = new StackdMedusaSdk(medusaConfig, [wishlistPlugin] as const)
 			await sdk.stackd.wishlist.listItems('wl_123')
 			expect(mockFetch).toHaveBeenCalledWith('/store/wishlists/wl_123/items', {
@@ -164,64 +152,107 @@ describe('wishlistPlugin', () => {
 	describe('removeItem', () => {
 		it('should call the correct endpoint', async () => {
 			const sdk = new StackdMedusaSdk(medusaConfig, [wishlistPlugin] as const)
-			await sdk.stackd.wishlist.removeItem('wl_123', 'wli_456')
-			expect(mockFetch).toHaveBeenCalledWith('/store/wishlists/wl_123/items/wli_456', {
+			await sdk.stackd.wishlist.removeItem('wl_123', 'variant_456')
+			expect(mockFetch).toHaveBeenCalledWith('/store/wishlists/wl_123/items/variant_456', {
 				method: 'DELETE',
 				headers: {}
 			})
 		})
 	})
 
-	describe('generateShareToken', () => {
-		it('should call the correct endpoint', async () => {
-			const sdk = new StackdMedusaSdk(medusaConfig, [wishlistPlugin] as const)
-			await sdk.stackd.wishlist.generateShareToken('wl_123')
-			expect(mockFetch).toHaveBeenCalledWith('/store/wishlists/wl_123/share', {
-				method: 'POST',
-				headers: {}
+	describe('local fallback', () => {
+		beforeEach(() => {
+			Object.defineProperty(globalThis, 'localStorage', {
+				value: {
+					getItem: jest.fn((): string | null => null),
+					setItem: jest.fn(),
+					removeItem: jest.fn()
+				},
+				writable: true,
+				configurable: true
 			})
 		})
-	})
 
-	describe('transfer', () => {
-		it('should call the correct endpoint', async () => {
-			const sdk = new StackdMedusaSdk(medusaConfig, [wishlistPlugin] as const)
-			await sdk.stackd.wishlist.transfer('wl_123')
-			expect(mockFetch).toHaveBeenCalledWith('/store/wishlists/wl_123/transfer', {
-				method: 'POST',
-				headers: {}
-			})
+		afterEach(() => {
+			delete (globalThis as Record<string, unknown>).localStorage
 		})
-	})
 
-	describe('import', () => {
-		it('should call the correct endpoint', async () => {
+		it('should use local wishlist for retrieve when id matches localId', async () => {
 			const sdk = new StackdMedusaSdk(medusaConfig, [wishlistPlugin] as const)
-			await sdk.stackd.wishlist.import({share_token: 'jwt_token'})
-			expect(mockFetch).toHaveBeenCalledWith('/store/wishlists/import', {
-				method: 'POST',
-				body: {share_token: 'jwt_token'},
-				headers: {}
-			})
+			const result = await sdk.stackd.wishlist.retrieve('wishlist')
+			expect(result.data.id).toBe('wishlist')
+			expect(result.data.visibility).toBe('private')
+			expect(mockFetch).not.toHaveBeenCalled()
 		})
-	})
 
-	describe('getTotalItemsCount', () => {
-		it('should call without query params', async () => {
+		it('should use server for retrieve when id does not match localId', async () => {
 			const sdk = new StackdMedusaSdk(medusaConfig, [wishlistPlugin] as const)
-			await sdk.stackd.wishlist.getTotalItemsCount()
-			expect(mockFetch).toHaveBeenCalledWith('/store/wishlists/total-items-count', {
+			await sdk.stackd.wishlist.retrieve('wl_123')
+			expect(mockFetch).toHaveBeenCalledWith('/store/wishlists/wl_123', {
 				method: 'GET',
 				headers: {}
 			})
 		})
 
-		it('should append wishlist_id query param', async () => {
+		it('should use local wishlist for addItem when id matches localId', async () => {
 			const sdk = new StackdMedusaSdk(medusaConfig, [wishlistPlugin] as const)
-			await sdk.stackd.wishlist.getTotalItemsCount({wishlist_id: 'wl_123'})
-			const url = mockFetch.mock.calls[0][0] as string
-			const params = new URLSearchParams(url.split('?')[1])
-			expect(params.get('wishlist_id')).toBe('wl_123')
+			const result = await sdk.stackd.wishlist.addItem('wishlist', {product_variant_id: 'v_1'})
+			expect(result.data.product_variant_id).toBe('v_1')
+			expect(result.data.id).toBeDefined()
+			expect(mockFetch).not.toHaveBeenCalled()
+		})
+
+		it('should use server for addItem when id does not match localId', async () => {
+			const sdk = new StackdMedusaSdk(medusaConfig, [wishlistPlugin] as const)
+			await sdk.stackd.wishlist.addItem('wl_123', {product_variant_id: 'v_1'})
+			expect(mockFetch).toHaveBeenCalledWith('/store/wishlists/wl_123/items', {
+				method: 'POST',
+				body: {product_variant_id: 'v_1'},
+				headers: {}
+			})
+		})
+
+		it('should use local wishlist for removeItem when id matches localId', async () => {
+			const sdk = new StackdMedusaSdk(medusaConfig, [wishlistPlugin] as const)
+			await sdk.stackd.wishlist.addItem('wishlist', {product_variant_id: 'v_1'})
+			const result = await sdk.stackd.wishlist.removeItem('wishlist', 'v_1')
+			expect(result.id).toBe('v_1')
+			expect(mockFetch).not.toHaveBeenCalled()
+		})
+
+		it('should use server for removeItem when id does not match localId', async () => {
+			const sdk = new StackdMedusaSdk(medusaConfig, [wishlistPlugin] as const)
+			await sdk.stackd.wishlist.removeItem('wl_123', 'v_1')
+			expect(mockFetch).toHaveBeenCalledWith('/store/wishlists/wl_123/items/v_1', {
+				method: 'DELETE',
+				headers: {}
+			})
+		})
+
+		it('should use local wishlist for listItems when id matches localId', async () => {
+			const sdk = new StackdMedusaSdk(medusaConfig, [wishlistPlugin] as const)
+			await sdk.stackd.wishlist.addItem('wishlist', {product_variant_id: 'v_1'})
+			await sdk.stackd.wishlist.addItem('wishlist', {product_variant_id: 'v_2'})
+			const result = await sdk.stackd.wishlist.listItems('wishlist')
+			expect(result.data).toHaveLength(2)
+			expect(result.page.count).toBe(2)
+			expect(mockFetch).not.toHaveBeenCalled()
+		})
+
+		it('should use server for listItems when id does not match localId', async () => {
+			const sdk = new StackdMedusaSdk(medusaConfig, [wishlistPlugin] as const)
+			await sdk.stackd.wishlist.listItems('wl_123')
+			expect(mockFetch).toHaveBeenCalledWith('/store/wishlists/wl_123/items', {
+				method: 'GET',
+				headers: {}
+			})
+		})
+
+		it('should use custom localWishlistId from options', async () => {
+			const sdk = new StackdMedusaSdk(medusaConfig, [wishlistPlugin] as const, {localWishlistId: 'my-local'})
+			const result = await sdk.stackd.wishlist.retrieve('my-local')
+			expect(result.data.id).toBe('my-local')
+			expect(mockFetch).not.toHaveBeenCalled()
 		})
 	})
 

@@ -59,13 +59,13 @@ Companion SDK for the [`@stackd-solutions/medusa-email-verification`](https://ww
 import {emailVerificationPlugin} from '@stackd-solutions/medusa-sdk'
 ```
 
-**Endpoints:**
+**Functions:**
 
-| Method                  | HTTP                             | Description                                               |
-| ----------------------- | -------------------------------- | --------------------------------------------------------- |
-| `sendVerificationEmail` | `POST /store/email/verify/send`  | Send a verification email to the authenticated customer   |
-| `verifyToken`           | `POST /store/email/verify`       | Verify an email token                                     |
-| `getVerificationStatus` | `GET /store/email/verify/status` | Get the verification status of the authenticated customer |
+| Function                | Description                                               |
+| ----------------------- | --------------------------------------------------------- |
+| `sendVerificationEmail` | Send a verification email to the authenticated customer   |
+| `verifyToken`           | Verify an email token                                     |
+| `getVerificationStatus` | Get the verification status of the authenticated customer |
 
 **Example:**
 
@@ -92,11 +92,11 @@ Companion SDK for the [`@stackd-solutions/medusa-password-manager`](https://www.
 import {passwordManagerPlugin} from '@stackd-solutions/medusa-sdk'
 ```
 
-**Endpoints:**
+**Functions:**
 
-| Method           | HTTP                                        | Description                                    |
-| ---------------- | ------------------------------------------- | ---------------------------------------------- |
-| `changePassword` | `POST /store/customers/me/password/change`  | Change the authenticated customer's password   |
+| Function         | Description                                  |
+| ---------------- | -------------------------------------------- |
+| `changePassword` | Change the authenticated customer's password |
 
 **Example:**
 
@@ -115,42 +115,53 @@ Companion SDK for the [`@stackd-solutions/medusa-wishlist`](https://www.npmjs.co
 import {wishlistPlugin} from '@stackd-solutions/medusa-sdk'
 ```
 
-**Endpoints:**
+**Functions:**
 
-| Method               | HTTP                                         | Description                             |
-| -------------------- | -------------------------------------------- | --------------------------------------- |
-| `list`               | `GET /store/wishlists`                       | List wishlists for the current customer |
-| `create`             | `POST /store/wishlists`                      | Create a new wishlist                   |
-| `retrieve`           | `GET /store/wishlists/:id`                   | Retrieve a wishlist by ID               |
-| `update`             | `PUT /store/wishlists/:id`                   | Update wishlist metadata                |
-| `delete`             | `DELETE /store/wishlists/:id`                | Delete a wishlist                       |
-| `listItems`          | `GET /store/wishlists/:id/items`             | List items in a wishlist                |
-| `addItem`            | `POST /store/wishlists/:id/items`            | Add a product variant to a wishlist     |
-| `removeItem`         | `DELETE /store/wishlists/:id/items/:item_id` | Remove an item from a wishlist          |
-| `generateShareToken` | `POST /store/wishlists/:id/share`            | Generate a share token for a wishlist   |
-| `transfer`           | `POST /store/wishlists/:id/transfer`         | Transfer a guest wishlist to a customer |
-| `import`             | `POST /store/wishlists/import`               | Import a shared wishlist via token      |
-| `getTotalItemsCount` | `GET /store/wishlists/total-items-count`     | Get total items count across wishlists  |
+| Function     | Description                             |
+| ------------ | --------------------------------------- |
+| `list`       | List wishlists for the current customer |
+| `create`     | Create a new wishlist                   |
+| `retrieve`   | Retrieve a wishlist by ID               |
+| `update`     | Update wishlist metadata                |
+| `delete`     | Delete a wishlist                       |
+| `listItems`  | List items in a wishlist                |
+| `addItem`    | Add a product variant to a wishlist     |
+| `removeItem` | Remove an item from a wishlist          |
 
-**Example:**
+**Examples:**
 
 ```typescript
+// List wishlists
+const {data} = await sdk.stackd.wishlist.list({limit: 10, offset: 0})
+
 // Create a wishlist
-const wishlist = await sdk.stackd.wishlist.create({
+const {data: wishlist} = await sdk.stackd.wishlist.create({
 	name: 'My Favorites',
 	sales_channel_id: 'sc_123'
 })
 
-// Add an item
-await sdk.stackd.wishlist.addItem(wishlist.id, {
+// Retrieve a wishlist
+const {data: wishlist} = await sdk.stackd.wishlist.retrieve('wl_123')
+
+// Update a wishlist
+const {data: wishlist} = await sdk.stackd.wishlist.update('wl_123', {
+	name: 'Updated Name',
+	visibility: 'public'
+})
+
+// Delete a wishlist
+await sdk.stackd.wishlist.delete('wl_123')
+
+// List items in a wishlist
+const {data: items} = await sdk.stackd.wishlist.listItems('wl_123', {limit: 10, offset: 0})
+
+// Add an item to a wishlist
+const {data: item} = await sdk.stackd.wishlist.addItem('wl_123', {
 	product_variant_id: 'variant_123'
 })
 
-// List wishlists
-const {data} = await sdk.stackd.wishlist.list({limit: 10, offset: 0})
-
-// Share a wishlist
-const {share_token} = await sdk.stackd.wishlist.generateShareToken(wishlist.id)
+// Remove an item from a wishlist
+await sdk.stackd.wishlist.removeItem('wl_123', 'variant_123')
 ```
 
 ## Plugin System

@@ -1,20 +1,5 @@
-import Medusa, {ClientHeaders} from '@medusajs/js-sdk'
-import type {StackdClientOptions} from '..'
-
-type StackdFetchWithBody = {
-	method: 'POST' | 'PUT' | 'PATCH'
-	body?: Record<string, any>
-	headers?: ClientHeaders
-}
-
-type StackdFetchWithoutBody = {
-	method: 'GET' | 'DELETE'
-	headers?: ClientHeaders
-}
-
-type StackdFetchOptions = StackdFetchWithBody | StackdFetchWithoutBody
-
-type StackdFetch = <T>(path: string, options: StackdFetchOptions) => Promise<T>
+import Medusa from '@medusajs/js-sdk'
+import type {StackdClientOptions, StackdFetch, StackdFetchOptions} from '..'
 
 export const createFetch =
 	(sdk: Medusa, options?: StackdClientOptions): StackdFetch =>

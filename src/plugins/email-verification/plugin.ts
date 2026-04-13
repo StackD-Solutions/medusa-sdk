@@ -1,21 +1,13 @@
 import Medusa, {ClientHeaders} from '@medusajs/js-sdk'
-import type {
-	SendVerificationEmailRequest,
-	SendVerificationEmailResponse,
-	VerifyEmailTokenRequest,
-	VerifyEmailTokenResponse,
-	EmailVerificationStatusResponse
-} from '@stackd-solutions/medusa-email-verification'
 import {StackdClientOptions, Plugin} from '../..'
 import {createFetch} from '../../utils/http'
-
-export type {
+import {
+	EmailVerificationStatusResponse,
 	SendVerificationEmailRequest,
 	SendVerificationEmailResponse,
 	VerifyEmailTokenRequest,
-	VerifyEmailTokenResponse,
-	EmailVerificationStatusResponse
-}
+	VerifyEmailTokenResponse
+} from '../../types'
 
 type EmailVerificationEndpoints = {
 	sendVerificationEmail: (input: SendVerificationEmailRequest, headers?: ClientHeaders) => Promise<SendVerificationEmailResponse>
