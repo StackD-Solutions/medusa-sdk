@@ -109,59 +109,77 @@ await sdk.stackd.passwordManager.changePassword({
 
 ### Wishlist
 
-Companion SDK for the [`@stackd-solutions/medusa-wishlist`](https://www.npmjs.com/package/@stackd-solutions/medusa-wishlist) plugin. Provides typed methods for the wishlist store API.
+Companion SDK for the [`@stackd-solutions/medusa-wishlist`](https://www.npmjs.com/package/@stackd-solutions/medusa-wishlist) plugin. Supports both **API-based wishlists** (persisted on the server) and a **local wishlist** (stored in `localStorage` with an in-memory fallback). Routing is transparent — the same methods work for both; the SDK determines the target based on the wishlist ID.
 
 ```typescript
 import {wishlistPlugin} from '@stackd-solutions/medusa-sdk'
 ```
 
+The local wishlist ID defaults to `'wishlist'` and can be customised via the `localWishlistId` plugin option. Wishlists with any other ID are routed to the API.
+
 **Functions:**
 
-| Function     | Description                             |
-| ------------ | --------------------------------------- |
-| `list`       | List wishlists for the current customer |
-| `create`     | Create a new wishlist                   |
-| `retrieve`   | Retrieve a wishlist by ID               |
-| `update`     | Update wishlist metadata                |
-| `delete`     | Delete a wishlist                       |
-| `listItems`  | List items in a wishlist                |
-| `addItem`    | Add a product variant to a wishlist     |
-| `removeItem` | Remove an item from a wishlist          |
+| Function     | Description                             | API | Local |
+| ------------ | --------------------------------------- | --- | ----- |
+| `list`       | List wishlists for the current customer | yes | —     |
+| `create`     | Create a new wishlist                   | yes | —     |
+| `retrieve`   | Retrieve a wishlist by ID               | yes | yes   |
+| `update`     | Update wishlist metadata                | yes | —     |
+| `delete`     | Delete a wishlist                       | yes | —     |
+| `listItems`  | List items in a wishlist                | yes | yes   |
+| `addItem`    | Add a product variant to a wishlist     | yes | yes   |
+| `removeItem` | Remove an item from a wishlist          | yes | yes   |
 
 **Examples:**
 
 ```typescript
-// List wishlists
+// List wishlists (API)
 const {data} = await sdk.stackd.wishlist.list({limit: 10, offset: 0})
 
-// Create a wishlist
+// Create a wishlist (API)
 const {data: wishlist} = await sdk.stackd.wishlist.create({
 	name: 'My Favorites',
 	sales_channel_id: 'sc_123'
 })
 
-// Retrieve a wishlist
+// Retrieve a wishlist (API)
 const {data: wishlist} = await sdk.stackd.wishlist.retrieve('wl_123')
 
-// Update a wishlist
+// Update a wishlist (API)
 const {data: wishlist} = await sdk.stackd.wishlist.update('wl_123', {
 	name: 'Updated Name',
 	visibility: 'public'
 })
 
-// Delete a wishlist
+// Delete a wishlist (API)
 await sdk.stackd.wishlist.delete('wl_123')
 
-// List items in a wishlist
+// List items in a wishlist (API)
 const {data: items} = await sdk.stackd.wishlist.listItems('wl_123', {limit: 10, offset: 0})
 
-// Add an item to a wishlist
+// Add an item to a wishlist (API)
 const {data: item} = await sdk.stackd.wishlist.addItem('wl_123', {
 	product_variant_id: 'variant_123'
 })
 
-// Remove an item from a wishlist
+// Remove an item from a wishlist (API)
 await sdk.stackd.wishlist.removeItem('wl_123', 'variant_123')
+
+// --- Local wishlist (uses localStorage with in-memory fallback) ---
+
+// Retrieve the local wishlist
+const {data: local} = await sdk.stackd.wishlist.retrieve('wishlist')
+
+// Add an item to the local wishlist
+const {data: item} = await sdk.stackd.wishlist.addItem('wishlist', {
+	product_variant_id: 'variant_456'
+})
+
+// List items in the local wishlist
+const {data: items} = await sdk.stackd.wishlist.listItems('wishlist', {limit: 10, offset: 0})
+
+// Remove an item from the local wishlist
+await sdk.stackd.wishlist.removeItem('wishlist', 'variant_456')
 ```
 
 ## Plugin System
