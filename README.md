@@ -182,6 +182,101 @@ const {data: items} = await sdk.stackd.wishlist.listItems('wishlist', {limit: 10
 await sdk.stackd.wishlist.removeItem('wishlist', 'variant_456')
 ```
 
+## React Hooks
+
+The SDK ships with a set of React hooks built on [TanStack Query](https://tanstack.com/query). They handle loading/error state, pagination, and cache invalidation for you — you just consume the returned values.
+
+### Setup
+
+Wrap your app in `StackdSdkProvider`. It exposes the SDK to the hooks and sets up an internal `QueryClient`.
+
+```tsx
+import {StackdMedusaSdk, StackdSdkProvider, wishlistPlugin} from '@stackd-solutions/medusa-sdk'
+
+const sdk = new StackdMedusaSdk(
+	{baseUrl: 'http://localhost:9000', auth: {type: 'session', jwtTokenStorageKey: 'medusa_auth_token'}},
+	[wishlistPlugin] as const,
+	{defaultPageSize: 20}
+)
+
+const App = () => (
+	<StackdSdkProvider sdk={sdk}>
+		<YourRoutes />
+	</StackdSdkProvider>
+)
+```
+
+### `useStackdSdk`
+
+Access the SDK instance from anywhere inside the provider.
+
+```tsx
+import {useStackdSdk} from '@stackd-solutions/medusa-sdk'
+
+const {sdk, options} = useStackdSdk()
+```
+
+### Wishlist Hooks
+
+| Hook                     | Purpose                                              |
+| ------------------------ | ---------------------------------------------------- |
+| `useWishlists`           | Paginated list of wishlists for the current customer |
+| `useWishlist`            | Retrieve a single wishlist by ID                     |
+| `useWishlistItems`       | Paginated list of items in a wishlist                |
+| `useCreateWishlist`      | Create a new wishlist                                |
+| `useUpdateWishlist`      | Update wishlist metadata                             |
+| `useDeleteWishlist`      | Delete a wishlist                                    |
+| `useCreateWishlistItem`  | Add a product variant to a wishlist                  |
+| `useDeleteWishlistItem`  | Remove an item from a wishlist                       |
+
+**Queries** (`useWishlists`, `useWishlist`, `useWishlistItems`) return `{loading, error}` alongside their data. List hooks also return `{currentPage, pageSize, setCurrentPage, setPageSize, total}` for pagination control — the initial `pageSize` comes from `StackdClientOptions.defaultPageSize` (defaults to `10`).
+
+**Mutations** (`useCreateWishlist`, `useUpdateWishlist`, `useDeleteWishlist`, `useCreateWishlistItem`, `useDeleteWishlistItem`) return an action function plus `{loading, error}`. On success they automatically invalidate the relevant `wishlists` query cache so lists re-fetch.
+
+**Examples:**
+
+```tsx
+import {
+	useWishlists,
+	useWishlist,
+	useWishlistItems,
+	useCreateWishlist,
+	useUpdateWishlist,
+	useDeleteWishlist,
+	useCreateWishlistItem,
+	useDeleteWishlistItem
+} from '@stackd-solutions/medusa-sdk'
+
+// List wishlists
+const {wishlists, total, currentPage, pageSize, setCurrentPage, setPageSize, loading, error} = useWishlists()
+
+// Retrieve a wishlist
+const {wishlist, loading, error} = useWishlist('wl_123')
+
+// List items in a wishlist
+const {items, total, setCurrentPage, setPageSize, loading, error} = useWishlistItems('wl_123')
+
+// Create a wishlist
+const {createWishlist, loading, error} = useCreateWishlist()
+await createWishlist({name: 'My Favorites', salesChannelId: 'sc_123'})
+
+// Update a wishlist
+const {updateWishlist} = useUpdateWishlist()
+await updateWishlist({wishlistId: 'wl_123', name: 'Updated Name', visibility: 'public'})
+
+// Delete a wishlist
+const {deleteWishlist} = useDeleteWishlist()
+await deleteWishlist({wishlistId: 'wl_123'})
+
+// Add an item
+const {createWishlistItem} = useCreateWishlistItem()
+await createWishlistItem({wishlistId: 'wl_123', productVariantId: 'variant_123'})
+
+// Remove an item
+const {deleteWishlistItem} = useDeleteWishlistItem()
+await deleteWishlistItem({wishlistId: 'wl_123', productVariantId: 'variant_123'})
+```
+
 ## Plugin System
 
 The SDK uses a generic plugin system. Each plugin registers a set of typed endpoints under a named key:
@@ -208,12 +303,14 @@ The SDK exports the following types:
 import type {StackdClientOptions, StackdMedusaConfig, Plugin, PluginsToStackd} from '@stackd-solutions/medusa-sdk'
 ```
 
-| Type                  | Description                                                  |
-| --------------------- | ------------------------------------------------------------ |
-| `StackdClientOptions` | Options passed to plugins (e.g. `getAuthHeader`)             |
-| `StackdMedusaConfig`  | Constructor parameters for the underlying `@medusajs/js-sdk` |
-| `Plugin`              | Plugin definition with a name and endpoint factory           |
-| `PluginsToStackd`     | Utility type that maps a plugin tuple to its endpoint types  |
+| Type                  | Description                                                                       |
+| --------------------- |-----------------------------------------------------------------------------------|
+| `StackdClientOptions` | Options passed to plugins (`getAuthHeader`, `localWishlistId`, `defaultPageSize`) |
+| `StackdMedusaConfig`  | Constructor parameters for the underlying `@medusajs/js-sdk`                      |
+| `Plugin`              | Plugin definition with a name and endpoint factory                                |
+| `PluginsToStackd`     | Utility type that maps a plugin tuple to its endpoint types                       |
+
+Hook return types (`UseWishlists`, `UseWishlist`, `UseWishlistItems`, `UseCreateWishlist`, `UseUpdateWishlist`, `UseDeleteWishlist`, `UseCreateWishlistItem`, `UseDeleteWishlistItem`) and their argument types (`CreateWishlistArgs`, `UpdateWishlistArgs`, `DeleteWishlistArgs`, `AddWishlistItemArgs`, `RemoveWishlistItemArgs`) are also exported.
 
 ## Build
 
