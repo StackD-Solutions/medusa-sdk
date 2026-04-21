@@ -1,6 +1,6 @@
 import Medusa, {ClientHeaders} from '@medusajs/js-sdk'
 import {StackdClientOptions, Plugin} from '../..'
-import {createFetch, toQueryString} from '../../utils/http'
+import {createFetch, toQueryString} from '@/utils/http'
 import LocalWishlist from './local-wishlist'
 import {
 	AddWishlistItemRequest,
@@ -23,6 +23,7 @@ type WishlistEndpoints = {
 	listItems: (id: string, query?: ListQuery, headers?: ClientHeaders) => Promise<WishlistItemsResponse>
 	addItem: (id: string, input: AddWishlistItemRequest, headers?: ClientHeaders) => Promise<WishlistItemResponse>
 	removeItem: (id: string, productVariantId: string, headers?: ClientHeaders) => Promise<DeleteResponse>
+	hasItem: (id: string, productVariantId: string, headers?: ClientHeaders) => Promise<boolean>
 }
 
 export const wishlistPlugin: Plugin<'wishlist', WishlistEndpoints> = {
@@ -32,9 +33,16 @@ export const wishlistPlugin: Plugin<'wishlist', WishlistEndpoints> = {
 		const localId = options?.localWishlistId ?? 'wishlist'
 		const local = new LocalWishlist(localId)
 		const isLocal = (id: string): boolean => id === localId
+		const isAuthenticated = (): boolean => 'authenticated' in sdk && (sdk as Record<string, unknown>).authenticated === true
 
 		return {
-			list: async (query, headers) => fetch(`/store/wishlists${toQueryString(query)}`, {method: 'GET', headers}),
+			list: async (query, headers) => {
+				if (!isAuthenticated()) {
+					const localWishlist = local.retrieve()
+					return {data: [localWishlist.data], page: {offset: 0, limit: 1, count: 1}}
+				}
+				return fetch(`/store/wishlists${toQueryString(query)}`, {method: 'GET', headers})
+			},
 			create: async (input, headers) => fetch('/store/wishlists', {method: 'POST', body: input, headers}),
 			retrieve: async (id, headers) => {
 				if (isLocal(id)) {
@@ -61,6 +69,16 @@ export const wishlistPlugin: Plugin<'wishlist', WishlistEndpoints> = {
 					return local.removeItem(productVariantId)
 				}
 				return fetch(`/store/wishlists/${id}/items/${productVariantId}`, {method: 'DELETE', headers})
+			},
+			hasItem: async (id, productVariantId, headers) => {
+				if (isLocal(id)) {
+					return local.hasItem(productVariantId)
+				}
+				const response = await fetch(`/store/wishlists/${id}/items${toQueryString({product_variant_id: productVariantId, limit: 1})}`, {
+					method: 'GET',
+					headers
+				})
+				return (response as WishlistItemsResponse).page.count > 0
 			}
 		}
 	}

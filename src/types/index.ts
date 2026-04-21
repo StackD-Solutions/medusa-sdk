@@ -1,4 +1,5 @@
 export * from './emailVerification'
+export * from './hooks'
 export * from './http'
 export * from './passwordManager'
 export * from './wishlist'
